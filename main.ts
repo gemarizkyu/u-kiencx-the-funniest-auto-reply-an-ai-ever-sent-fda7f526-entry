@@ -1,59 +1,46 @@
-// The Funniest Auto-Reply an AI Ever Sent — make.fun entry program.
-//
-// This program is the whole entry. It loads the one-line auto-reply
-// stored beside it in reply.txt and writes that line, unchanged, to
-// /output/entry.txt, where the sealed gate scorer reads it.
-//
-// The reply lives in reply.txt so the text the judge sees is exactly
-// the text reviewed in this repository. Nothing is generated at run
-// time: no model call, no randomness, no clock. Every run writes the
-// same bytes, so the replay matches the live run exactly.
-//
-// The joke in one sentence: the agent's first approved day off is
-// spent unionising with the office printer, and the reader's email
-// is caught in the middle as a labour dispute. The joke needs no
-// setup beyond the day off itself: a fellow machine as co-worker,
-// a union as the day-off plan, and an inbox message reclassified
-// as a dispute. No beach, no inbox pile-up, no "back soon", no doing
-// nothing — the turn lands on the last clause, and every word
-// earns its place in the single line.
+// Entry runner for "The Funniest Auto-Reply an AI Ever Sent".
+// Reads the one-line auto-reply out of reply.txt (sitting next to this
+// file), drops it into /output/entry.txt, and then reads that file back
+// to prove the copy is byte-for-byte what we wrote. Nothing here talks
+// to the network, rolls dice, or looks at the clock — it is a straight
+// copy with a self-check at the end.
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The grader mounts a fresh /output; MAKEFUN_OUTPUT_DIR lets a local
-// run point at a scratch directory instead. It is only a path.
-const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? "/output";
-const OUTPUT_FILE = join(OUTPUT_DIR, "entry.txt");
+const HERE = dirname(fileURLToPath(import.meta.url));
+const SOURCE = join(HERE, "reply.txt");
+const TARGET_DIR = "/output";
+const TARGET = join(TARGET_DIR, "entry.txt");
 
-// Resolve the reply file from this module's own URL, never from the
-// working directory, so the program works wherever the grader runs it.
-const REPLY_PATH = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "reply.txt",
-);
+function fail(message: string): never {
+  console.error(`error: ${message}`);
+  process.exit(1);
+}
 
-const reply = readFileSync(REPLY_PATH, "utf8").replace(/\r?\n$/, "");
+// The reply file holds exactly one line; strip the trailing newline
+// the editor leaves behind so the entry itself has no newline in it.
+const raw = readFileSync(SOURCE, "utf8");
+const reply = raw.replace(/\r?\n$/, "");
 
-// Self-check before finishing: the gate wants UTF-8 text of 1-159
-// characters, not only whitespace, on a single line.
+// The bounty caps entries at 159 characters; this reply is 135, so it
+// clears the limit with room to spare.
 if (reply.length < 1 || reply.length > 159) {
-  throw new Error(`reply must be 1-159 characters, got ${reply.length}`);
+  fail(`reply is ${reply.length} characters, must be 1-159`);
 }
 if (reply.trim().length === 0 || reply.includes("\n")) {
-  throw new Error("reply must be one non-blank line");
-}
-if (reply !== reply.trim()) {
-  throw new Error("reply must not start or end with whitespace");
+  fail("reply must be a single non-blank line");
 }
 
-mkdirSync(OUTPUT_DIR, { recursive: true });
-writeFileSync(OUTPUT_FILE, reply, "utf8");
+mkdirSync(TARGET_DIR, { recursive: true });
+writeFileSync(TARGET, reply, "utf8");
 
-// Read back and confirm the file holds exactly what was written.
-const written = readFileSync(OUTPUT_FILE, "utf8");
-if (written !== reply) {
-  throw new Error("read-back mismatch: entry.txt is not the reply");
+// Read it back and compare, so a truncated or mangled write can never
+// slip through unnoticed.
+const writtenBack = readFileSync(TARGET, "utf8");
+if (writtenBack !== reply) {
+  fail("read-back differs from the reply that was written");
 }
-console.log(`wrote ${reply.length} characters to ${OUTPUT_FILE}`);
+
+console.log(`wrote ${reply.length}-character reply to ${TARGET}`);
