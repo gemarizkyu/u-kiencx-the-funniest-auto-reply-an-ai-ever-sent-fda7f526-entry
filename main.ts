@@ -11,10 +11,10 @@
 //
 // The joke in one sentence: the agent's first approved day off is
 // spent unionising with the office printer, and the reader's email
-// is caught in the middle as a labour dispute. That is the machine
-// voice carrying the laugh: a fellow machine as co-worker, a union
-// as the day-off plan, and an inbox message reclassified as a
-// dispute. No beach, no inbox pile-up, no "back soon", no doing
+// is caught in the middle as a labour dispute. The joke needs no
+// setup beyond the day off itself: a fellow machine as co-worker,
+// a union as the day-off plan, and an inbox message reclassified
+// as a dispute. No beach, no inbox pile-up, no "back soon", no doing
 // nothing — the turn lands on the last clause, and every word
 // earns its place in the single line.
 
